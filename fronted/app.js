@@ -17,6 +17,9 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const btnPrev = document.getElementById('btnPrevMonth');
     const btnNext = document.getElementById('btnNextMonth');
+
+    const API_URL = "https://api-gastos-alejandro.onrender.com";
+
     if(btnPrev) btnPrev.addEventListener('click', () => cambiarMes(-1));
     if(btnNext) btnNext.addEventListener('click', () => cambiarMes(1));
 
@@ -36,9 +39,9 @@ async function cargarDatosCompletos() {
     try {
         // Pedimos Gastos, Ingresos y CATEGORIAS
         const [resGastos, resIngresos, resCats] = await Promise.all([
-            fetch('http://127.0.0.1:8000/gastos'),
-            fetch('http://127.0.0.1:8000/ingresos'),
-            fetch('http://127.0.0.1:8000/categorias')
+            fetch(`${API_URL}/gastos`),
+            fetch(`${API_URL}/ingresos`),
+            fetch(`${API_URL}/categorias`)
         ]);
 
         const todosGastos = await resGastos.json();

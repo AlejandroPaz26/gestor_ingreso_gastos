@@ -4,8 +4,13 @@ from dotenv import load_dotenv # Importar esto
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+
+from fastapi.middleware.cors import CORSMiddleware
+
 import mysql.connector
 load_dotenv()
+
+
 
 app = FastAPI()
 
@@ -25,6 +30,15 @@ class Gasto(BaseModel):
     descripcion: str
     fecha: str
     categoria_id: int
+
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # "*" significa: "Acepta conexiones de cualquier sitio web"
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # --- CONEXIÓN A BASE DE DATOS ---
 def get_db_connection():
