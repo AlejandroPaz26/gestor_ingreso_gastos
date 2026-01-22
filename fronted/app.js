@@ -8,7 +8,10 @@ let chartFrecuencia = null;
 
 let datosGastosMes = [];
 let datosIngresosMes = [];
-let todasLasCategorias = []; // Guardaremos la lista de categorías aquí
+let todasLasCategorias = [];
+
+// API URL (Define aquí tu servidor de Render)
+const API_URL = "https://api-gastos-alejandro.onrender.com"; 
 
 document.addEventListener('DOMContentLoaded', () => {
     console.log("🚀 Sistema Iniciado");
@@ -18,15 +21,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnPrev = document.getElementById('btnPrevMonth');
     const btnNext = document.getElementById('btnNextMonth');
 
-    const API_URL = "https://api-gastos-alejandro.onrender.com";
-
     if(btnPrev) btnPrev.addEventListener('click', () => cambiarMes(-1));
     if(btnNext) btnNext.addEventListener('click', () => cambiarMes(1));
 
     configurarNavegacion();
     setupModales();
     setupModalCategoria();
-    setupModalEdicion(); // NUEVO
+    setupModalEdicion();
 
     cargarDatosCompletos();
 });
@@ -37,7 +38,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function cargarDatosCompletos() {
     try {
-        // Pedimos Gastos, Ingresos y CATEGORIAS
         const [resGastos, resIngresos, resCats] = await Promise.all([
             fetch(`${API_URL}/gastos`),
             fetch(`${API_URL}/ingresos`),
@@ -46,13 +46,11 @@ async function cargarDatosCompletos() {
 
         const todosGastos = await resGastos.json();
         const todosIngresos = await resIngresos.json();
-        todasLasCategorias = await resCats.json(); // Guardamos las categorías
+        todasLasCategorias = await resCats.json();
 
-        // Actualizamos dropdowns
         actualizarDropdownCategorias(todasLasCategorias);
         actualizarDropdownEdicion(todasLasCategorias);
 
-        // Filtramos por mes
         const añoVer = fechaVisualizada.getFullYear();
         const mesVer = fechaVisualizada.getMonth();
 
@@ -64,12 +62,10 @@ async function cargarDatosCompletos() {
         datosGastosMes = filtrarPorMes(todosGastos);
         datosIngresosMes = filtrarPorMes(todosIngresos);
 
-        // Totales
         const totalGastos = datosGastosMes.reduce((sum, g) => sum + g.monto, 0);
         const totalIngresos = datosIngresosMes.reduce((sum, i) => sum + i.monto, 0);
         const saldo = totalIngresos - totalGastos;
 
-        // UI Header
         const lblIngreso = document.querySelector('.summary-box.income h2');
         if(lblIngreso) lblIngreso.innerText = `S/ ${totalIngresos.toFixed(2)}`;
         document.getElementById('lblGastado').innerText = `S/ ${totalGastos.toFixed(2)}`;
@@ -77,8 +73,7 @@ async function cargarDatosCompletos() {
         lblSaldo.innerText = `S/ ${saldo.toFixed(2)}`;
         lblSaldo.style.color = saldo >= 0 ? '#374151' : '#ef4444';
 
-        // Vistas
-        distribuirEnTablasDinamicas(datosGastosMes); // FUNCIÓN NUEVA
+        distribuirEnTablasDinamicas(datosGastosMes);
         
         if (document.getElementById('navReportes').classList.contains('active')) {
             renderizarGraficos();
@@ -89,22 +84,18 @@ async function cargarDatosCompletos() {
     }
 }
 
-// --- NUEVA LÓGICA DE TABLAS DINÁMICAS ---
 function distribuirEnTablasDinamicas(gastos) {
     const contenedor = document.getElementById('contenedorGastosDinamico');
-    contenedor.innerHTML = ''; // Limpiar
+    contenedor.innerHTML = ''; 
 
     if (gastos.length === 0) {
         contenedor.innerHTML = '<p style="grid-column: 1/-1; text-align:center; padding: 2rem;">No hay gastos en este mes.</p>';
         return;
     }
 
-    // 1. Agrupar gastos por ID de categoría
     const grupos = {};
     
     gastos.forEach(g => {
-        // Si la categoría fue borrada, el ID puede no existir en `todasLasCategorias`
-        // Usamos "0" para "Sin Categoría / Borrada"
         const catId = g.categoria_id; 
         if (!grupos[catId]) grupos[catId] = { nombre: 'Sin Categoría', icono: 'fa-question', total: 0, items: [] };
         
@@ -112,7 +103,6 @@ function distribuirEnTablasDinamicas(gastos) {
         grupos[catId].total += g.monto;
     });
 
-    // 2. Asignar nombres e iconos reales
     todasLasCategorias.forEach(cat => {
         if (grupos[cat.id]) {
             grupos[cat.id].nombre = cat.nombre;
@@ -120,12 +110,9 @@ function distribuirEnTablasDinamicas(gastos) {
         }
     });
 
-    // 3. Dibujar las columnas (Una por cada grupo encontrado)
     for (const [id, grupo] of Object.entries(grupos)) {
-        // Aseguramos icono font-awesome
         const iconoClase = grupo.icono && grupo.icono.startsWith('fa-') ? grupo.icono : 'fa-tag';
 
-        // HTML de la columna completa
         const columnaHTML = document.createElement('div');
         columnaHTML.className = 'detail-column';
         columnaHTML.innerHTML = `
@@ -152,7 +139,7 @@ function distribuirEnTablasDinamicas(gastos) {
     }
 }
 
-// --- LÓGICA PARA EDITAR/MOVER GASTO ---
+// --- EDICIÓN ---
 function setupModalEdicion() {
     const modal = document.getElementById('modalEditar');
     const close = document.querySelector('.close-btn-edit');
@@ -167,21 +154,20 @@ function setupModalEdicion() {
         const nuevaCat = document.getElementById('selNuevaCategoria').value;
 
         try {
-            await fetch(`http://127.0.0.1:8000/gastos/${idGasto}`, {
+            await fetch(`${API_URL}/gastos/${idGasto}`, {
                 method: 'PUT',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ categoria_id: parseInt(nuevaCat) })
             });
             alert("Categoría actualizada!");
             modal.style.display = 'none';
-            cargarDatosCompletos(); // Recargar para ver el cambio
+            cargarDatosCompletos();
         } catch (error) {
             alert("Error al actualizar");
         }
     };
 }
 
-// Función global para que el HTML pueda llamarla onclick
 window.abrirModalEdicion = function(id, descripcion) {
     const modal = document.getElementById('modalEditar');
     document.getElementById('editGastoId').value = id;
@@ -202,22 +188,19 @@ function actualizarDropdownEdicion(categorias) {
 }
 
 // ==========================================
-// 3. GRÁFICOS Y REPORTES
+// 3. GRÁFICOS
 // ==========================================
 
 function renderizarGraficos() {
     if (!datosGastosMes) return;
 
-    // A. Circular
     const agrupadoCategoria = {};
     datosGastosMes.forEach(g => {
-        // Buscamos el nombre real en la lista completa
         const catObj = todasLasCategorias.find(c => c.id === g.categoria_id);
         const nombreCat = catObj ? catObj.nombre : 'Sin Categoría';
         agrupadoCategoria[nombreCat] = (agrupadoCategoria[nombreCat] || 0) + g.monto;
     });
 
-    // B. Frecuencia
     const conteoItems = {};
     datosGastosMes.forEach(g => {
         const desc = g.descripcion.trim().toLowerCase();
@@ -226,7 +209,6 @@ function renderizarGraficos() {
     });
     const itemsOrdenados = Object.entries(conteoItems).sort((a, b) => b[1] - a[1]).slice(0, 5);
     
-    // C. Lineal
     const agrupadoDias = {};
     datosGastosMes.forEach(g => {
         const dia = parseInt(g.fecha.split('-')[2]);
@@ -235,7 +217,6 @@ function renderizarGraficos() {
     const diasOrdenados = Object.keys(agrupadoDias).sort((a, b) => a - b);
     const montosPorDia = diasOrdenados.map(d => agrupadoDias[d]);
 
-    // --- DIBUJAR ---
     const ctxPie = document.getElementById('graficoCircular');
     if (ctxPie) {
         if (chartCircular) chartCircular.destroy();
@@ -363,7 +344,7 @@ function setupModales() {
     if(closeGasto) closeGasto.onclick = () => modalGasto.style.display = 'none';
     if(formGasto) formGasto.onsubmit = async (e) => {
         e.preventDefault();
-        await enviarDatos('http://127.0.0.1:8000/gastos', formGasto, true);
+        await enviarDatos(`${API_URL}/gastos`, formGasto, true);
         modalGasto.style.display = 'none';
     };
 
@@ -379,7 +360,7 @@ function setupModales() {
     if(closeIngreso) closeIngreso.onclick = () => modalIngreso.style.display = 'none';
     if(formIngreso) formIngreso.onsubmit = async (e) => {
         e.preventDefault();
-        await enviarDatos('http://127.0.0.1:8000/ingresos', formIngreso, false);
+        await enviarDatos(`${API_URL}/ingresos`, formIngreso, false);
         modalIngreso.style.display = 'none';
     };
 
@@ -404,7 +385,7 @@ function setupModalCategoria() {
         const nombre = form.querySelector('input[type="text"]').value;
         const icono = form.querySelector('input[name="icon"]:checked').value;
         try {
-            await fetch('http://127.0.0.1:8000/categorias', {
+            await fetch(`${API_URL}/categorias`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ nombre, icono })
@@ -469,7 +450,7 @@ async function cargarCategoriasVisuales() {
     const contenedor = document.getElementById('listaCategoriasVisual');
     contenedor.innerHTML = '<p>Cargando...</p>';
     try {
-        const res = await fetch('http://127.0.0.1:8000/categorias');
+        const res = await fetch(`${API_URL}/categorias`);
         const categorias = await res.json();
         contenedor.innerHTML = ''; 
         categorias.forEach(cat => {
@@ -494,7 +475,7 @@ async function cargarCategoriasVisuales() {
 async function eliminarCategoria(id) {
     if(!confirm("¿Seguro que quieres borrar esta categoría? Los gastos asociados quedarán huérfanos.")) return;
     try {
-        const res = await fetch(`http://127.0.0.1:8000/categorias/${id}`, { method: 'DELETE' });
+        const res = await fetch(`${API_URL}/categorias/${id}`, { method: 'DELETE' });
         if(res.ok) cargarCategoriasVisuales();
         else alert("No se pudo eliminar");
     } catch (error) { alert("Error de conexión"); }
@@ -511,6 +492,5 @@ function actualizarDropdownCategorias(categorias) {
         option.innerText = cat.nombre;
         select.appendChild(option);
     });
-    // Si la opción seleccionada antes ya no existe, el navegador seleccionará la primera
     if(valorActual) select.value = valorActual;
 }
