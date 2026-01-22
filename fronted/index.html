@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mis Finanzas</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+
+    <div class="container">
+        <aside class="sidebar">
+            <div class="logo">
+                <h2><i class="fa-solid fa-wallet"></i> MyGastos</h2>
+            </div>
+            <ul class="menu">
+                <li class="active" id="navMensual"><a href="#"><i class="fa-solid fa-calendar-days"></i> Mensual</a></li>
+                <li id="navReportes"><a href="#"><i class="fa-solid fa-chart-pie"></i> Reportes</a></li>
+                <li id="navCategorias"><a href="#"><i class="fa-solid fa-tags"></i> Categorías</a></li>
+            </ul>
+            <div class="logout">
+                <a href="#"><i class="fa-solid fa-right-from-bracket"></i> Salir</a>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header>
+                <div class="month-selector">
+                    <button id="btnPrevMonth" class="nav-arrow"><i class="fa-solid fa-chevron-left"></i></button>
+                    <h2 id="tituloMes">Cargando...</h2>
+                    <button id="btnNextMonth" class="nav-arrow"><i class="fa-solid fa-chevron-right"></i></button>
+                </div>
+
+                <div class="user-info">
+                        <button class="btn-new ingreso" id="btnNuevoIngreso">
+                            <i class="fa-solid fa-arrow-trend-up"></i> Ingreso
+                        </button>
+                        
+                        <button class="btn-new gasto" id="btnNuevoGasto">
+                            <i class="fa-solid fa-arrow-trend-down"></i> Gasto
+                        </button>
+                        
+                        <div class="user-avatar">A</div>
+                </div>
+
+            </header>
+
+            <div id="vista-mensual">
+                <div class="summary-cards">
+                    <div class="summary-box income">
+                        <h3>Presupuesto</h3>
+                        <h2 id="lblPresupuesto">S/ 2,000.00</h2>
+                    </div>
+                    <div class="summary-box expense">
+                        <h3>Gastado Real</h3>
+                        <h2 id="lblGastado">S/ 0.00</h2>
+                    </div>
+                    <div class="summary-box balance">
+                        <h3>Saldo Restante</h3>
+                        <h2 id="lblSaldo">S/ 0.00</h2>
+                    </div>
+                </div>
+
+                <div class="details-grid" id="contenedorGastosDinamico">
+                </div>
+            </div>
+
+            <div id="vista-reportes" style="display: none;">
+                <div class="charts-grid-top">
+                    <div class="chart-box">
+                        <h3>Distribución (Soles)</h3>
+                        <div class="chart-wrapper">
+                            <canvas id="graficoCircular"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-box">
+                        <h3>Top 5: Lo que más repites</h3>
+                        <div class="chart-wrapper">
+                            <canvas id="graficoFrecuencia"></canvas>
+                        </div>
+                        <p class="chart-hint">💡 Identifica aquí compras repetitivas para buscar descuentos por mayor.</p>
+                    </div>
+                </div>
+    
+                <div class="charts-row-bottom">
+                    <div class="chart-box full-width">
+                        <h3>Evolución de Gasto Diario</h3>
+                        <div class="chart-wrapper wide">
+                            <canvas id="graficoLineal"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="vista-categorias" style="display: none;">
+                <div class="header-categorias">
+                    <h2>Mis Categorías</h2>
+                    <button class="btn-new" id="btnNuevaCategoria">
+                        <i class="fa-solid fa-plus"></i> Nueva Categoría
+                    </button>
+                </div>
+
+                <div class="grid-categorias" id="listaCategoriasVisual">
+                    </div>
+            </div>
+
+
+            
+
+        </main>
+    </div>
+
+    <div id="modalGasto" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Agregar Gasto</h2>
+                <span class="close-btn">&times;</span>
+            </div>
+            <form id="formGasto">
+                <div class="form-group">
+                    <label>Monto (S/)</label>
+                    <input type="number" step="0.01" placeholder="0.00" required>
+                </div>
+                <div class="form-group">
+                    <label>Descripción</label>
+                    <input type="text" placeholder="Ej: Pago de Luz" required>
+                </div>
+                <div class="form-group">
+                    <label>Categoría</label>
+                    <select required>
+                        <optgroup label="Vivienda & Servicios">
+                            <option value="3">Vivienda/Servicios</option>
+                        </optgroup>
+                        <optgroup label="Gastos Diarios">
+                            <option value="1">Alimentación</option>
+                            <option value="2">Transporte</option>
+                            <option value="5">Salud</option>
+                        </optgroup>
+                        <optgroup label="Ocio">
+                            <option value="4">Entretenimiento</option>
+                        </optgroup>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Fecha</label>
+                    <input type="date" required>
+                </div>
+                <button type="submit" class="btn-save">Guardar Gasto</button>
+            </form>
+        </div>
+    </div>
+
+        <div id="modalIngreso" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 style="color: var(--header-green-dark);">Registrar Ingreso</h2>
+                    <span class="close-btn-ingreso" style="cursor:pointer; font-size:1.5rem;">&times;</span>
+                </div>
+                <form id="formIngreso">
+                    <div class="form-group">
+                        <label>Monto (S/)</label>
+                        <input type="number" step="0.01" placeholder="0.00" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Descripción</label>
+                        <input type="text" placeholder="Ej: Sueldo Enero" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Fecha</label>
+                        <input type="date" required>
+                    </div>
+                    <button type="submit" class="btn-save" style="background-color: var(--header-green-dark);">
+                        Guardar Ingreso
+                    </button>
+                </form>
+            </div>
+        </div>
+
+            <div id="modalCategoria" class="modal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>Crear Categoría</h2>
+                        <span class="close-btn-cat">&times;</span>
+                    </div>
+                    <form id="formCategoria">
+                        <div class="form-group">
+                            <label>Nombre</label>
+                            <input type="text" placeholder="Ej: Mascotas" required maxlength="20">
+                        </div>
+                        <div class="form-group">
+                            <label>Elige un Icono</label>
+                            <div class="icon-selector">
+                                <label><input type="radio" name="icon" value="fa-car"> 🚗</label>
+                                <label><input type="radio" name="icon" value="fa-bus"> 🚌</label>
+                                <label><input type="radio" name="icon" value="fa-bicycle"> 🚲</label>
+                                <label><input type="radio" name="icon" value="fa-gas-pump"> ⛽</label>
+                                <label><input type="radio" name="icon" value="fa-paw" checked> 🐾</label>
+                                <label><input type="radio" name="icon" value="fa-dumbbell"> 🏋️</label>
+                                <label><input type="radio" name="icon" value="fa-graduation-cap"> 🎓</label>
+                                <label><input type="radio" name="icon" value="fa-shirt"> 👕</label>
+                                <label><input type="radio" name="icon" value="fa-plane"> ✈️</label>
+                                <label><input type="radio" name="icon" value="fa-heart-pulse"> 🏥</label>
+                                <label><input type="radio" name="icon" value="fa-wifi"> 📡</label>
+                                <label><input type="radio" name="icon" value="fa-bag-shopping"> 🛍️</label>
+                                <label><input type="radio" name="icon" value="fa-utensils"> 🍴</label>
+                                <label><input type="radio" name="icon" value="fa-burger"> 🍔</label>
+                                <label><input type="radio" name="icon" value="fa-mug-hot"> ☕</label>
+                                <label><input type="radio" name="icon" value="fa-beer-mug-empty"> 🍺</label>
+                                <label><input type="radio" name="icon" value="fa-house"> 🏠</label>
+                                <label><input type="radio" name="icon" value="fa-lightbulb"> 💡</label>
+                                <label><input type="radio" name="icon" value="fa-faucet-drip"> 💧</label>
+                                <label><input type="radio" name="icon" value="fa-wifi"> 📡</label>
+                                <label><input type="radio" name="icon" value="fa-gamepad"> 🎮</label>
+                                <label><input type="radio" name="icon" value="fa-film"> 🎬</label>
+                                <label><input type="radio" name="icon" value="fa-music"> 🎵</label>
+                                <label><input type="radio" name="icon" value="fa-mobile-screen"> 📱</label>
+                                <label><input type="radio" name="icon" value="fa-graduation-cap"> 🎓</label>
+                                <label><input type="radio" name="icon" value="fa-book"> 📚</label>
+                                <label><input type="radio" name="icon" value="fa-briefcase"> 💼</label>
+                                <label><input type="radio" name="icon" value="fa-money-bill-trend-up"> 📈</label>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn-save">Crear</button>
+                    </form>
+                </div>
+            </div>
+
+            <div id="modalEditar" class="modal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>Mover Gastos</h2>
+                        <span class="close-btn-edit">&times;</span>
+                    </div>
+
+                    <p id="txtGastoEditar" style="margin-bottom: 15px; color: #666;"></p>
+
+                    <form id="formEditar">
+                        <input type="hidden" id="editGastoId">
+                        <div class="form-group">
+                            <label>Nueva Categoria</label>
+                            <select id="selNuevaCategoria" required></select>
+
+                        </div>
+
+                        <button type="submit" class="btn-save" style="background-color: var(--accent-color);">
+                            Actualizar Categoria
+                        </button>
+
+                    </form>
+                </div>
+            </div>
+
+
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
